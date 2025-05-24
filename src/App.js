@@ -20,9 +20,47 @@ function App() {
   const simulateTextExtraction = async (url) => {
     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
     
+    // INTENTAR extracción real primero (funcionará para algunos sitios)
+    try {
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      
+      if (data.contents) {
+        // Crear un parser temporal
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, 'text/html');
+        
+        // Limpiar elementos no deseados
+        const unwanted = ['script', 'style', 'nav', 'header', 'footer'];
+        unwanted.forEach(tag => {
+          doc.querySelectorAll(tag).forEach(el => el.remove());
+        });
+        
+        const extractedText = doc.body.textContent || doc.body.innerText || '';
+        const cleanText = extractedText
+          .replace(/\s+/g, ' ')
+          .replace(/\n\s*\n/g, '\n')
+          .trim();
+        
+        if (cleanText.length > 100) {
+          return {
+            title: doc.title || 'Contenido extraído',
+            content: cleanText,
+            wordCount: cleanText.split(' ').length,
+            charCount: cleanText.length,
+            paragraphs: cleanText.split('\n').filter(p => p.trim().length > 0).length,
+            extracted: true
+          };
+        }
+      }
+    } catch (error) {
+      console.log('Proxy falló, usando contenido simulado:', error);
+    }
+    
+    // FALLBACK: Contenido simulado si falla la extracción real
     const domain = new URL(url).hostname;
     
-    // Simular diferentes tipos de contenido según el dominio
     let mockContent = '';
     let mockTitle = '';
     
@@ -112,26 +150,34 @@ MIT License
     } else {
       mockTitle = `Contenido de ${domain}`;
       mockContent = `
-Bienvenido a ${domain}
+⚠️ CONTENIDO SIMULADO ⚠️
 
-Esta es una página web con contenido variado. El texto que estás leyendo es una simulación de lo que podría contener una página web real.
+Este es contenido simulado porque no se pudo extraer el texto real de ${domain}.
 
-Sección 1: Introducción
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+Para extraer contenido real, usa una de estas opciones:
 
-Sección 2: Contenido Principal
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+1. SCRIPT DE CONSOLA (Recomendado):
+   - Ve a la página que quieres extraer
+   - Abre la consola (F12)
+   - Pega el script de extracción
+   - Descarga automáticamente el archivo TXT
 
-Sección 3: Información Adicional
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+2. EXTENSIÓN DE NAVEGADOR:
+   - Web Scraper
+   - Text Extractor
+   - Mercury Reader
 
-Lista de elementos:
-• Elemento 1
-• Elemento 2  
-• Elemento 3
+3. HERRAMIENTAS PROFESIONALES:
+   - Screaming Frog
+   - Beautiful Soup (Python)
+   - APIs de scraping
 
-Conclusión:
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+LIMITACIONES DEL NAVEGADOR:
+- CORS bloquea solicitudes entre dominios
+- Políticas de seguridad web
+- Protecciones anti-scraping
+
+Para contenido real de ${domain}, usa el script de consola directamente en la página.
       `;
     }
     
@@ -140,7 +186,8 @@ Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deseru
       content: mockContent.trim(),
       wordCount: mockContent.trim().split(' ').length,
       charCount: mockContent.trim().length,
-      paragraphs: mockContent.trim().split('\n').filter(p => p.trim().length > 0).length
+      paragraphs: mockContent.trim().split('\n').filter(p => p.trim().length > 0).length,
+      extracted: false
     };
   };
 
