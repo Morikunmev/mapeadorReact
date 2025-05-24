@@ -1,0 +1,20 @@
+# Excluir node_modules local (se instala en contenedor)
+node_modules
+npm-debug.log
+
+# Archivos de sistema
+.git
+.gitignore
+README.md
+
+# Archivos de desarrollo
+.nyc_output
+coverage
+.coverage/
+
+# Archivos de configuración innecesarios
+tailwind.config.js
+postcss.config.js
+package-lock.json
+
+# NO excluir .env para hot reload
